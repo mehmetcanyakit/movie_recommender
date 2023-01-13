@@ -29,7 +29,7 @@ class Result{
   bool video;
   var vote_average;
   String title;
-  double popularity;
+  num popularity;
   String poster_path;
   List<int> genre_ids=[];
   String backdrop_path;
@@ -45,13 +45,17 @@ class Result{
     vote_average=result['vote_average'];
     title=result['title'].toString();
     popularity=result['popularity'];
-    poster_path="https://image.tmdb.org/t/p/w185/"+result['poster_path'].toString();
+    poster_path=result['poster_path'] == null
+        ? "https://www.subscription.co.uk/time/europe/Solo/Content/Images/noCover.gif"
+        : "https://image.tmdb.org/t/p/w185/"+result['poster_path'].toString();
 
     for(var i=0; i<result['genre_ids'].length; i++){
       genre_ids.add(result['genre_ids'][i]);
     }
 
-    backdrop_path=result['backdrop_path'].toString();
+    backdrop_path= result['poster_path'] == null
+        ? "https://image.tmdb.org/t/p/w185/${result['poster_path']}"
+        : "https://image.tmdb.org/t/p/w185/"+result['backdrop_path'].toString();
     adult = result['adult'];
     overview=result['overview'];
     release_date=result['release_date'].toString();
@@ -63,14 +67,11 @@ class Result{
   String get get_backdrop_path => backdrop_path;
   List<int> get get_genre_ids => genre_ids;
   String get get_poster_path =>poster_path;
-  double get get_popularity => popularity;
+  num get get_popularity => popularity;
   String get get_title =>title;
   String get get_vote_average =>vote_average;
   bool get is_video => video;
   int get get_id => id;
   String get get_vote_count => vote_count;
-
-
-
 
 }

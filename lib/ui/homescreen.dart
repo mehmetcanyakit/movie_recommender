@@ -1,10 +1,14 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:moviee/blocs/genre_bloc.dart';
 import 'package:moviee/blocs/movies_bloc.dart';
-
+import 'package:moviee/ui/movie_detail.dart';
+import 'package:moviee/ui/recommended_movie.dart';
+import '../model/genre_model.dart';
 import '../model/item_model.dart';
 import 'colors.dart';
-import 'dart:math';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key key}) : super(key: key);
@@ -24,58 +28,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: ContentPage(),
+      body: Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: PreLoadContent(),
+      ),
     );
   }
 }
 
-class ContentPage extends StatefulWidget {
-   ContentPage({Key key}) : super(key: key);
-  AsyncSnapshot<ItemModel> snapshot;
+class PreLoadContent extends StatefulWidget {
+  const PreLoadContent({Key key}) : super(key: key);
+
   @override
-  State<ContentPage> createState() => _ContentPageState();
+  State<PreLoadContent> createState() => _PreLoadContentState();
 }
 
-class _ContentPageState extends State<ContentPage> {
-
-  Widget getPopularMovies(){
-    return StreamBuilder(stream: bloc.allMovies, builder: (context, AsyncSnapshot<ItemModel> snapshot) {
+class _PreLoadContentState extends State<PreLoadContent> {
+  @override
+  Widget build(BuildContext context) {
+    bloc_genres.fetchAllGenres();
+    return StreamBuilder(stream: bloc_genres.allGenres, builder: (context, AsyncSnapshot<GenreModel> snapshot) {
       if (snapshot.hasData) {
-        return TextButton(
-          onPressed: (){
-            return showBottomSheet(context: context, builder: (context){
-              return Container(
-                color: Colors.black87,
-                child: Column(
-                  children: [
-                    Container(
-                      //margin: EdgeInsets.only(top: 40),
-                      height: 400,
-                      width: 500,
-                      child: Image.network(snapshot.data.results[0].poster_path,
-                        height: 320,
-                        width: double.infinity,
-                        fit: BoxFit.fill,),
-                    ),
-                    Text(snapshot.data.results[0].title,style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.white,
-                    ),
-                      textAlign: TextAlign.start,
-                    ),
-                  ],
-                ),
-              );
-            }
-            );
-          },
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: 215,
-            color: bgColor,
-            child: Trends(snapshot),
-          ),
-        );
+        return ContentPage(snapshot);
       }
       else if (snapshot.hasError) {
         print('something went wrong');
@@ -83,6 +58,46 @@ class _ContentPageState extends State<ContentPage> {
       }
       else
         return Center(child: CircularProgressIndicator());
+    },
+    );
+  }
+}
+
+
+class ContentPage extends StatefulWidget {
+
+  AsyncSnapshot<GenreModel> snapshotGenres;
+  ContentPage(this.snapshotGenres);
+
+  @override
+  State<ContentPage> createState() => _ContentPageState();
+}
+
+class _ContentPageState extends State<ContentPage> {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+      super.initState();
+  }
+
+  Widget getPopularMovies(){
+    return StreamBuilder(stream: bloc.allMovies, builder: (context, AsyncSnapshot<ItemModel> snapshot) {
+      if (snapshot.hasData) {
+        return Container(
+          width: MediaQuery.of(context).size.width,
+          height: 215,
+          color: bgColor,
+          child: Trends(snapshot,widget.snapshotGenres),
+        );
+      }
+      else if (snapshot.hasError) {
+        print('something went wrong');
+        return Text(snapshot.error.toString());
+      }
+      else {
+        return Center(child: CircularProgressIndicator());
+      }
     },
     );
   }
@@ -94,7 +109,7 @@ class _ContentPageState extends State<ContentPage> {
           width: MediaQuery.of(context).size.width,
           height: 215,
           color: bgColor,
-          child: Trends(snapshot),
+          child: Trends(snapshot,widget.snapshotGenres),
         );
       }
       else if (snapshot.hasError) {
@@ -114,7 +129,7 @@ class _ContentPageState extends State<ContentPage> {
           width: MediaQuery.of(context).size.width,
           height: 215,
           color: bgColor,
-          child: Trends(snapshot),
+          child: Trends(snapshot,widget.snapshotGenres),
         );
       }
       else if (snapshot.hasError) {
@@ -134,7 +149,7 @@ class _ContentPageState extends State<ContentPage> {
           width: MediaQuery.of(context).size.width,
           height: 210,
           color: bgColor,
-          child: Trends(snapshot),
+          child: Trends(snapshot,widget.snapshotGenres),
         );
       }
       else if (snapshot.hasError) {
@@ -153,10 +168,12 @@ class _ContentPageState extends State<ContentPage> {
     bloc.fetchAllTopRatedMovies();
     bloc.fetchAllUpcomingMovies();
     bloc.fetchAllNowPlayingMovies();
+    bloc.fetchInterstellar();
     return SingleChildScrollView(
       child: Column(
         children: [
-          Stack(children: [
+          Stack(
+            children: [
             Container(
               width: MediaQuery.of(context).size.width,
               height: 1330,
@@ -168,7 +185,7 @@ class _ContentPageState extends State<ContentPage> {
                   Stack(
                     children: [
                       Container(
-                      child: StreamBuilder(stream: bloc.allMovies, builder: (context, AsyncSnapshot<ItemModel> snapshot){
+                      child: StreamBuilder(stream: bloc.interstellar, builder: (context, AsyncSnapshot<ItemModel> snapshot){
                         if(snapshot.hasData){
                           return Container(
                             height: 320,
@@ -184,36 +201,22 @@ class _ContentPageState extends State<ContentPage> {
                       }
                       ),
                     ),
-                      Positioned(
-                        right: 5.0,
-                        bottom: 5.0,
-                        child: IconButton(
-                          onPressed: (){},
-                          icon: Icon(
-                        Icons.add,
-                          size: 36,
-                          color: Colors.white,
-                      ),
-                      ),
-                      ),
-                      Positioned(
-                        left: 5.0,
-                        bottom: 2.0,
-                        child: IconButton(
-                          onPressed: (){},
-                          icon: Icon(
-                            Icons.favorite_border,
-                            size: 28,
-                            color: Colors.white,
-                          ),
+                      Container(
+                        padding: EdgeInsets.all(3),
+                        margin: EdgeInsets.only(left:20, top: 45),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.0),
+                          color: Colors.black
                         ),
+                        child: Image.asset("images/playstore.png", height: 30, width: 30,),
                       ),
                       Positioned(
                         right: 50,
-                          left: 52,
-                          bottom: 10,
-                          child: Text('INTERSTELLAR',style: TextStyle(fontSize: 32,fontFamily: 'SubstanceMedium',color: Colors.white)),),
-                  ],
+                          left: 50,
+                          bottom: 8,
+                          child: Text('INTERSTELLAR',style: TextStyle(fontSize: 30,fontFamily: 'SubstanceMedium',color: Colors.white)),),
+
+                    ],
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -277,7 +280,8 @@ class _ContentPageState extends State<ContentPage> {
 class Trends extends StatefulWidget {
 
   AsyncSnapshot<ItemModel> snapshot;
-  Trends(this.snapshot);
+  AsyncSnapshot<GenreModel> snapshotGenres;
+  Trends(this.snapshot, this.snapshotGenres);
 
   @override
   State<Trends> createState() => _TrendsState();
@@ -291,22 +295,36 @@ class _TrendsState extends State<Trends> {
       scrollDirection: Axis.horizontal,
       itemCount: widget.snapshot.data.results.length,
       itemBuilder: (context, index){
+
+        String genres = widget.snapshotGenres.data
+            .getGenre(widget.snapshot.data.results[index].genre_ids);
+
         return Container(
           height: 200,
           child: Row(
             children: [
-              Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10.0),
-                    child: Image.network(
-                        widget.snapshot.data.results[index].poster_path,
-                      height: 210,
-                      width: 140,
-                      //fit: BoxFit.fill,
+              InkWell(
+                onTap: (){
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => MovieDetail(widget.snapshot.data.results[index],genres),
+                      ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10.0),
+                      child: Image.network(
+                          widget.snapshot.data.results[index].poster_path,
+                        height: 210,
+                        width: 140,
+                        //fit: BoxFit.fill,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               SizedBox(width: 8,),
             ],
@@ -316,32 +334,6 @@ class _TrendsState extends State<Trends> {
     );
   }
 }
-
-
-
-// class ItemsLoad extends StatefulWidget {
-//   AsyncSnapshot<ItemModel> snapshot;
-//   ItemsLoad(this.snapshot);
-//   @override
-//   State<ItemsLoad> createState() => _ItemsLoadState();
-// }
-//
-// class _ItemsLoadState extends State<ItemsLoad> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return ListView.builder(
-//       scrollDirection: Axis.horizontal,
-//       itemCount: widget.snapshot.data.results.length,
-//       itemBuilder: (context, index){
-//         return Column(
-//           children: [
-//             Image.network(widget.snapshot.data.results[index].poster_path),
-//           ],
-//         );
-//       },
-//     );
-//   }
-// }
 
 class ItemsLoad extends StatefulWidget {
   AsyncSnapshot<ItemModel> snapshot;
@@ -354,17 +346,25 @@ class _ItemsLoadState extends State<ItemsLoad> {
 
   @override
   Widget build(BuildContext context) {
-    Random random = new Random();
-    int randomNumber = random.nextInt(5);
     return Column(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(20.0),
-          child: Image.network(
-              'https://media.idownloadblog.com/wp-content/uploads/2014/12/interstellar-wide-space-film-movie-art-9-wallpaper.jpg',     //widget.snapshot.data.results[randomNumber].poster_path,
-            height: 320,
-            width: double.infinity,
-            fit: BoxFit.fill,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RecommendedMovie(widget.snapshot.data.results[0], null),
+                ),
+              );
+              },
+            child: Image.network(
+                'https://media.idownloadblog.com/wp-content/uploads/2014/12/interstellar-wide-space-film-movie-art-9-wallpaper.jpg',
+              height: 320,
+              width: double.infinity,
+              fit: BoxFit.fill,
+            ),
           ),
         ),
       ],
